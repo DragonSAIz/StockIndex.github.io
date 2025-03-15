@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>数据可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+    <style>
+        .controls { margin: 20px; padding: 10px; background: #f5f5f5; }
+        .controls select, .controls button { margin-right: 15px; padding: 5px; }
+        #chart { width: 95%; height: 600px; margin: 20px auto; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <!-- Sheet 选择 -->
+        <select id="sheetSelect" onchange="loadSheetData()">
+            <option value="Sheet1">Sheet1</option>
+            <option value="Sheet2">Sheet2</option>
+            <option value="Sheet2">Sheet3</option>
+            <option value="Sheet2">Sheet4</option>
+        </select>
+
+        <!-- 时间范围选择 -->
+        <button onclick="filterData(30)">近1个月</button>
+        <button onclick="filterData(90)">近3个月</button>
+        <button onclick="filterData(180)">近半年</button>
+        <button onclick="filterData(365)">近1年</button>
+        <button onclick="filterData(1095)">近3年</button>
+        <button onclick="filterData(1825)">近5年</button>
+    </div>
+    
+    <div id="chart"></div>
+
+    <script>
+        let currentChart = null;
+        let allData = []; // 存储原始数据
+        let currentSheet = '';
+
+        // 加载 Sheet 数据
+        function loadSheetData() {
+            currentSheet = document.getElementById('sheetSelect').value;
+            fetch(`data_${currentSheet}.json`)
+                .then(response => response.json())
+                .then(data => {
+                    allData = data;
+                    renderChart(data); // 首次加载全量数据
+                });
+        }
+
+        // 时间过滤函数
+        function filterData(days) {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            const filtered = allData.filter(item => {
+                const itemDate = new Date(item.date);
+                return itemDate > cutoffDate;
+            });
+            
+            renderChart(filtered);
+        }
+
+        // 图表渲染核心函数
+        function renderChart(data) {
+            if (currentChart) currentChart.dispose();
+            
+            const chartDom = document.getElementById('chart');
+            currentChart = echarts.init(chartDom);
+            
+            // 处理 r_cp 与其他系列
+            const series = [];
+            Object.keys(data[0]).forEach(key => {
+                if (key === 'date') return;
+                
+                series.push({
+                    name: key,
+                    type: 'line',
+                    showSymbol: false,
+                    lineStyle: key === 'r_cp' ? { width: 3 } : { width: 1 },
+                    data: data.map(d => d[key])
+                });
+            });
+
+            const option = {
+                title: { text: `${currentSheet} - 数据趋势` },
+                tooltip: { trigger: 'axis' },
+                legend: {
+                    data: series.map(s => s.name),
+                    selected: {
+                        'r_cp': true // 强制显示 r_cp
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(d => d.date),
+                    axisLabel: { rotate: 45 }
+                },
+                yAxis: { type: 'value' },
+                series: series,
+                dataZoom: [{
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                }]
+            };
+
+            currentChart.setOption(option);
+        }
+
+        // 默认加载第一个 Sheet
+        loadSheetData();
+    </script>
+</body>
+</html>
