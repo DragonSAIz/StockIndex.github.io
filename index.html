@@ -4,6 +4,34 @@
     <title>数据可视化</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
     <style>
+        /* 强制全屏遮罩层（网页1方案增强） */
+        #disclaimer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;  /* 覆盖整个视口 */
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;  /* 确保置于最顶层 */
+        }
+        /* 弹窗内容容器 */
+        .disclaimer-box {
+            background: white;
+            padding: 2rem;
+            max-width: 800px;
+            max-height: 80vh;  /* 移动端适配 */
+            overflow-y: auto; /* 内容过长时滚动 */
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+        
+        /* 禁止背景滚动（网页1未提及的关键点） */
+        body.disclaimer-active {
+            overflow: hidden;
+        }
         .controls { margin: 20px; padding: 10px; background: #f5f5f5; }
         .controls select, .controls button { margin-right: 15px; padding: 5px; }
         #chart { width: 95%; height: 666px; margin: 20px auto; }
@@ -109,8 +137,37 @@
         // 默认加载第一个 Sheet
         loadSheetData();
     </script>
+
+    <!-- 强制弹窗结构 -->
+    <div id="disclaimer-overlay">
+        <div class="disclaimer-box">
+            <h2>免责声明</h2>
+            <p>（此处填写详细声明内容）...</p>
+            <button id="close-disclaimer">我已阅读并同意</button>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载后强制显示（网页1事件绑定升级）
+        window.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('disclaimer-active');
+            
+            // 禁止通过ESC关闭（增强强制特性）
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') e.preventDefault();
+            });
+        });
+
+        // 关闭按钮事件（网页1基础逻辑）
+        document.getElementById('close-disclaimer').addEventListener('click', () => {
+            document.getElementById('disclaimer-overlay').remove();
+            document.body.classList.remove('disclaimer-active');
+            
+            // 可选：存储同意状态（需补充localStorage逻辑）
+        });
+    </script>
 </body>
-<footer>
-    <p align="center" style="color: red;"><b>免责声明：本网页所展示内容仅做学习使用，所涉及指数的不作推荐，据此买卖，风险自负。</b></p>
+<footer class="site-footer">
+    <p>当你一旦使用本网站或其任何网页，即表示你无条件接受上述所载的<a href="disclaimer.html" target="_blank">免责声明</a></p>
 </footer>
 </html>
